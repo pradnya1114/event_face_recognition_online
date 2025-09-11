@@ -175,6 +175,6 @@ def latest_attendee():
         return jsonify({})
 
 if __name__ == "__main__":
-    import os
-    port = int(os.environ.get("PORT", 5000))
-    app.run(host="0.0.0.0", port=port)
+    port = int(os.environ.get("PORT", 5000))  # Use Render's PORT if available, else 5000 locally
+    debug_mode = True if os.environ.get("PORT") is None else False  # Debug locally only
+    app.run(host="0.0.0.0", port=port, debug=debug_mode)
