@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Event Face Scan</title>
+<style>
+    body { display: flex; flex-direction: row; height: 100vh; margin: 0; font-family: Arial, sans-serif; }
+    #camera-container, #info-container { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+    video { width: 80%; border: 2px solid #333; border-radius: 10px; }
+    #capture-btn { margin-top: 10px; padding: 10px 20px; font-size: 18px; cursor: pointer; }
+    #info-container { background: #f0f0f0; text-align: center; }
+    #info-container img { width: 300px; height: 300px; object-fit: cover; border-radius: 10px; border: 2px solid #333; }
+    #info-container h1, #info-container h2 { margin: 10px 0; }
+</style>
+</head>
+<body>
+
+<div id="camera-container">
+    <video id="video" autoplay></video>
+    <button id="capture-btn">Upload / Scan</button>
+</div>
+
+<div id="info-container">
+    <h1 id="attendee-name">No attendee yet</h1>
+    <h2 id="attendee-org"></h2>
+    <img id="attendee-photo" src="" alt="Attendee Photo">
+</div>
+
+<script>
+// Access camera
+const video = document.getElementById('video');
+navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' } })
+.then(stream => video.srcObject = stream)
+.catch(err => console.error(err));
+
+const captureBtn = document.getElementById('capture-btn');
+
+captureBtn.addEventListener('click', async () => {
+    // Capture frame from video
+    const canvas = document.createElement('canvas');
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    const ctx = canvas.getContext('2d');
+    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+    const imageData = canvas.toDataURL('image/png');
+
+    // Send to /scan_face
+    const res = await fetch('/scan_face', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ image: imageData })
+    });
+
+    const data = await res.json();
+    if(data.found){
+        document.getElementById('attendee-name').innerText = data.name;
+        document.getElementById('attendee-org').innerText = data.organization;
+        document.getElementById('attendee-photo').src = data.photo_path + '?t=' + new Date().getTime(); // avoid caching
+    } else {
+        document.getElementById('attendee-name').innerText = "No match found";
+        document.getElementById('attendee-org').innerText = "";
+        document.getElementById('attendee-photo').src = "";
+    }
+});
+</script>
+
+</body>
+</html>
