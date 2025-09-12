@@ -11,6 +11,10 @@ import csv
 
 app = Flask(__name__)
 
+@app.route("/")
+def home():
+    return "Hello, Render!"
+
 # === Folders and Paths ===
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 PHOTO_FOLDER = os.path.join(BASE_DIR, "pre_registered", "photos")
@@ -175,6 +179,14 @@ def latest_attendee():
         return jsonify({})
 
 if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 5000))  # Use Render's PORT if available, else 5000 locally
-    debug_mode = True if os.environ.get("PORT") is None else False  # Debug locally only
+    # Use Render's PORT if available, else default to 5000 for local development
+    port = int(os.environ.get("PORT", 5000))
+
+    # Debug only when running locally
+    debug_mode = True if os.environ.get("PORT") is None else False  
+
+    # IMPORTANT:
+    # ✅ Locally: database.db and photos persist across restarts
+    # ❌ On free cloud hosts (like Render free tier), filesystem is temporary
+    #    → You’ll lose data on redeploy unless you use a persistent DB (Postgres, etc.)
     app.run(host="0.0.0.0", port=port, debug=debug_mode)
